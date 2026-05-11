@@ -1,0 +1,50 @@
+:root {
+  /* 🧠 Typography */
+  --font-main: "Inter", system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+
+  /* 🎨 Text */
+  --text-main: 235, 238, 245;
+  --text-muted: 170, 175, 195;
+  --text-soft: 200, 210, 230;
+
+  /* 🌈 Accent */
+  --accent-main: 62, 199, 192;
+  --accent-soft: 160, 210, 220;
+
+  /* 🌌 Nebula Colors (slightly richer for glow depth) */
+  --nebula-a: 142, 95, 255;
+  --nebula-b: 50, 220, 210;
+  --nebula-c: 110, 140, 255;
+
+  /* 🌑 Base Background */
+  --bg-dark-1: 6, 10, 22;
+  --bg-dark-2: 5, 23, 51;
+
+  /* ⚙️ Motion */
+  --ease-soft: cubic-bezier(0.4, 0, 0.2, 1);
+
+  /* 🌌 Aurora (MAIN VISUAL LAYER) */
+  --blur-heavy: 60px;
+  --nebula-opacity: 0.65;
+  --nebula-duration: 120s;
+  --nebula-vector-x: 40px;
+  --nebula-vector-y: 25px;
+
+  /* 💫 Ripple (secondary glow layer) */
+  --ripple-opacity: 0.28;
+  --ripple-blur: 60px;
+  --ripple-vector-x: 25px;
+  --ripple-vector-y: 18px;
+
+  /* ✨ Stars */
+  --star-opacity: 0.45;
+  --large-star-opacity: 0.65;
+  --star-size: 1px;
+  --star-density: 5px 5px;
+
+  /* 🎚 Global intensity */
+  --bg-intensity: 1;
+
+  /* ⚡ Performance */
+  --performance-mode: auto;
+}

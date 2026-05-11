@@ -1,0 +1,261 @@
+@import "./base/reset.css";
+@import "./base/variables.css";
+@import "./layout/theme.css"; /* ✅ FIXED PATH */
+
+/* =====================================================
+   VYDRA — Global tokens and base reset
+   ===================================================== */
+
+:root {
+  /* Typography */
+  --font-main: "Inter", system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+
+  /* Text */
+  --text-main: 236, 239, 245;
+  --text-muted: 160, 168, 186;
+
+  /* Accent system */
+  --accent-main: 66, 203, 197;
+  --accent-soft: 170, 214, 230;
+
+  /* Nebula */
+  --nebula-a: 126, 92, 255;
+  --nebula-b: 255, 210, 118;
+  --nebula-c: 95, 145, 255;
+
+  /* Dark bases */
+  --bg-dark-1: 6, 11, 24;
+  --bg-dark-2: 7, 20, 46;
+
+  /* Motion */
+  --ease-soft: cubic-bezier(0.25, 0.9, 0.35, 1);
+
+  /* Background tuning */
+  --nebula-opacity: 0.075;
+  --nebula-duration: 360s;
+  --nebula-vector-x: 10%;
+  --nebula-vector-y: 5%;
+  --ripple-vector-x: calc(var(--nebula-vector-x) * 0.45);
+  --ripple-vector-y: calc(var(--nebula-vector-y) * 0.45);
+  --ripple-opacity: 0.028;
+  --ripple-blur: 56px;
+
+  --star-opacity: 0.05;
+  --star-size: 1px;
+  --star-density: 7px 7px;
+  --large-star-opacity: 0.22;
+  --bg-intensity: 1;
+
+  --blur-heavy: 36px;
+}
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* =====================================================
+   Base reset
+   ===================================================== */
+
+@layer base {
+  html,
+  body,
+  #root {
+    margin: 0;
+    padding: 0;
+    min-height: 100%;
+    background: transparent;
+    color: rgba(var(--text-main), 1);
+    font-family: var(--font-main);
+  }
+
+  body {
+    overflow-x: hidden;
+  }
+
+  * {
+    box-sizing: border-box;
+  }
+
+  *::before,
+  *::after {
+    box-sizing: border-box;
+  }
+
+  a {
+    color: inherit;
+  }
+
+  button,
+  input,
+  select,
+  textarea {
+    font: inherit;
+  }
+}
+
+/* =====================================================
+   Shared app layout
+   ===================================================== */
+
+.vydra-app {
+  position: relative;
+  z-index: 10;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.vydra-main {
+  flex: 1;
+  position: relative;
+  z-index: 10;
+  padding: 84px 1.5rem 64px;
+}
+
+.page-container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 4.75rem 1.5rem;
+}
+
+.centered {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.text-muted {
+  color: rgba(var(--text-muted), 1);
+}
+
+.text-glow {
+  text-shadow: 0 0 18px rgba(var(--nebula-a), 0.5);
+}
+
+/* Shared glass */
+.glass,
+.card {
+  background: linear-gradient(180deg, rgba(255,255,255,0.028), rgba(255,255,255,0.015));
+  border: 1px solid rgba(255,255,255,0.06);
+  border-radius: 18px;
+  box-shadow: 0 18px 46px rgba(0,0,0,0.34);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  color: rgba(var(--text-main), 1);
+}
+
+/* =====================================================
+   Subtle reusable UI helpers
+   ===================================================== */
+
+.section-title {
+  color: white;
+  font-size: 18px;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+}
+
+.badge-icon {
+  width: 44px;
+  height: 44px;
+  border-radius: 999px;
+  display: grid;
+  place-items: center;
+  border: 1px solid rgba(255,255,255,0.08);
+  background: rgba(255,255,255,0.03);
+  color: rgba(200,220,255,0.92);
+}
+
+.divider-soft {
+  height: 1px;
+  width: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.12), transparent);
+  opacity: 0.7;
+}
+
+.tag-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 13px;
+  border-radius: 999px;
+  background: rgba(255,255,255,0.045);
+  border: 1px solid rgba(255,255,255,0.055);
+  color: rgba(235,240,250,0.95);
+  font-size: 13px;
+  font-weight: 700;
+}
+
+/* =====================================================
+   Ripple overlay
+   ===================================================== */
+
+.ripple-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 30;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 700ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.ripple-overlay.active {
+  opacity: 1;
+}
+
+.ripple-overlay .ripple-circle {
+  width: 24vmax;
+  height: 24vmax;
+  border-radius: 50%;
+  transform: scale(0.6);
+  opacity: 0;
+  filter: blur(24px);
+  background:
+    radial-gradient(circle at center, rgba(160,200,255,0.18) 0%, rgba(142,95,255,0.09) 30%, rgba(80,100,255,0.02) 60%, transparent 80%);
+  will-change: transform, opacity;
+  transition: transform 700ms cubic-bezier(0.22, 1, 0.36, 1), opacity 700ms;
+}
+
+.ripple-overlay.active .ripple-circle {
+  transform: scale(1);
+  opacity: 1;
+}
+
+/* =====================================================
+   Page-level polish
+   ===================================================== */
+
+.hero-card {
+  position: relative;
+}
+
+.home-root {
+  padding: 20px 18px 70px;
+}
+
+.home-shell {
+  max-width: 1510px;
+  margin: 0 auto;
+}
+
+/* =====================================================
+   Responsive tuning
+   ===================================================== */
+
+@media (max-width: 900px) {
+  .vydra-main {
+    padding: 78px 1rem 56px;
+  }
+
+  .page-container {
+    padding: 3.5rem 1rem;
+  }
+}
+html, body, #root {
+  height: 100%;
+  background: rgb(6, 8, 16); /* fallback */
+}
