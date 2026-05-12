@@ -25,11 +25,21 @@ async function warmUpBackend() {
   if (hasWarmedUp) return;
 
   try {
-    await fetch("https://vydra-backend-v2.onrender.com/health");
-    console.log("🔥 Backend warmed up");
-    hasWarmedUp = true;
+    console.log("🔥 Warming up backend...");
+
+    const res = await fetch(
+      "https://vydra-backend-v2.onrender.com/health",
+      { cache: "no-store" }
+    );
+
+    if (res.ok) {
+      console.log("✅ Backend is awake");
+      hasWarmedUp = true;
+    } else {
+      throw new Error("Backend not ready");
+    }
   } catch (err) {
-    console.warn("⚠️ Warm-up failed, will retry via request");
+    console.warn("⚠️ Warm-up failed, backend may still be sleeping");
   }
 }
 
@@ -44,7 +54,8 @@ async function retryRequest(error, retries = 2) {
   console.warn(`🔁 Retrying request... (${3 - retries}/2)`);
 
   try {
-    return await apiClient.request(error.config);
+    await new Promise((res) => setTimeout(res, 3000)); // wait 3s before retry
+return await apiClient.request(error.config);
   } catch (err) {
     return retryRequest(err, retries - 1);
   }
