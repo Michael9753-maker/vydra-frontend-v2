@@ -1,7 +1,7 @@
 import axios from "axios";
 
 // ✅ Single source of truth
-const DEFAULT_BACKEND_ORIGIN = "https://vydra-backend-v2.onrender.com/api";
+const DEFAULT_BACKEND_ORIGIN = "https://vydra-backend-v2.onrender.com";
 
 const BACKEND_ORIGIN = (
   import.meta.env.VITE_BACKEND_ORIGIN || DEFAULT_BACKEND_ORIGIN
