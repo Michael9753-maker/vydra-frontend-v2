@@ -173,7 +173,6 @@ const absoluteDownloadUrl = (pathOrUrl) => {
 
   const prefixes = [
     "/api/download/file/",
-    "/api/download/download/file/",
     "/download/file/",
   ];
 

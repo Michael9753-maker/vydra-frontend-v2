@@ -1,16 +1,17 @@
-const DEFAULT_BACKEND_ORIGIN = "https://vydra-backend-v2.onrender.com/api";
+import axios from "axios";
+
+// ✅ IMPORTANT: NO /api here
+const DEFAULT_BACKEND_ORIGIN = "https://vydra-backend-v2-production.up.railway.app";
 
 const BACKEND_ORIGIN = (
   import.meta.env.VITE_BACKEND_ORIGIN || DEFAULT_BACKEND_ORIGIN
 ).replace(/\/$/, "");
 
-const api = axios.create({
-  baseURL: BACKEND_ORIGIN,
-});
 const DEFAULT_TIMEOUT_MS = 25000;
 
+// ✅ Build full URL safely
 function buildUrl(endpoint) {
-  return `${BACKEND_ORIGIN}/${String(endpoint).replace(/^\/+/, "")}`;
+  return `${BACKEND_ORIGIN}${endpoint.startsWith("/") ? "" : "/"}${endpoint}`;
 }
 
 async function readResponseBody(res) {
@@ -29,7 +30,16 @@ function getErrorMessage(payload, fallback) {
   return payload?.message || payload?.error || fallback;
 }
 
-export async function request(endpoint, { method = "GET", data, token = null, timeoutMs = DEFAULT_TIMEOUT_MS, headers = {} } = {}) {
+export async function request(
+  endpoint,
+  {
+    method = "GET",
+    data,
+    token = null,
+    timeoutMs = DEFAULT_TIMEOUT_MS,
+    headers = {},
+  } = {}
+) {
   const controller = new AbortController();
   const timer = window.setTimeout(() => controller.abort(), timeoutMs);
 
@@ -48,7 +58,9 @@ export async function request(endpoint, { method = "GET", data, token = null, ti
     const payload = await readResponseBody(res);
 
     if (!res.ok) {
-      throw new Error(getErrorMessage(payload, `API request failed with status ${res.status}`));
+      throw new Error(
+        getErrorMessage(payload, `API request failed with status ${res.status}`)
+      );
     }
 
     return payload;
