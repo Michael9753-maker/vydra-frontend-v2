@@ -7,7 +7,7 @@ import { api } from "../api/apiClient";
 /* ================= CONFIG ================= */
 const BACKEND_ORIGIN = (
   import.meta.env.VITE_BACKEND_ORIGIN ||
-  "https://vydra-backend-v2.onrender.com"
+  "https://vydra-backend-v2-production.up.railway.app"
 ).replace(/\/$/, "");
 
 const HISTORY_TTL_MS = 5 * 60 * 60 * 1000;
