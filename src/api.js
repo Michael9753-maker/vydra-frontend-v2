@@ -1,5 +1,3 @@
-import axios from "axios";
-
 // ✅ IMPORTANT: NO /api here
 const DEFAULT_BACKEND_ORIGIN = "https://vydra-backend-v2-production.up.railway.app";
 
@@ -9,7 +7,11 @@ const BACKEND_ORIGIN = (
 
 const DEFAULT_TIMEOUT_MS = 25000;
 
-// ✅ Build full URL safely
+
+// ----------------------------
+// Helpers
+// ----------------------------
+
 function buildUrl(endpoint) {
   return `${BACKEND_ORIGIN}${endpoint.startsWith("/") ? "" : "/"}${endpoint}`;
 }
@@ -25,10 +27,10 @@ async function readResponseBody(res) {
   }
 }
 
-function getErrorMessage(payload, fallback) {
-  if (typeof payload === "string") return payload;
-  return payload?.message || payload?.error || fallback;
-}
+
+// ----------------------------
+// Core Request Function
+// ----------------------------
 
 export async function request(
   endpoint,
@@ -57,22 +59,35 @@ export async function request(
 
     const payload = await readResponseBody(res);
 
+    // 🔥 IMPORTANT: throw FULL payload (not just string)
     if (!res.ok) {
-      throw new Error(
-        getErrorMessage(payload, `API request failed with status ${res.status}`)
-      );
+      throw payload || { error: `HTTP_${res.status}` };
     }
 
     return payload;
+
   } catch (err) {
     if (err?.name === "AbortError") {
-      throw new Error(`Request timed out after ${timeoutMs}ms`);
+      throw { error: `timeout`, message: `Request timed out after ${timeoutMs}ms` };
     }
-    throw err;
+
+    // already structured
+    if (typeof err === "object") {
+      throw err;
+    }
+
+    // fallback
+    throw { error: "unknown_error", message: String(err) };
+
   } finally {
     clearTimeout(timer);
   }
 }
+
+
+// ----------------------------
+// Shortcuts
+// ----------------------------
 
 export async function post(endpoint, data = {}, token = null, options = {}) {
   return request(endpoint, { method: "POST", data, token, ...options });
@@ -80,4 +95,13 @@ export async function post(endpoint, data = {}, token = null, options = {}) {
 
 export async function get(endpoint, token = null, options = {}) {
   return request(endpoint, { method: "GET", token, ...options });
+}
+
+
+// ----------------------------
+// DOWNLOAD API
+// ----------------------------
+
+export async function createDownload(payload) {
+  return post("/api/download", payload);
 }

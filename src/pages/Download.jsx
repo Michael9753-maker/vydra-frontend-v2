@@ -2,7 +2,7 @@ import { useContext, useEffect, useRef, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { PremiumContext } from "../context/PremiumContext";
 import { useAuth } from "../context/AuthContext";
-import { api } from "../api/apiClient";
+import { createDownload, get } from "../api";
 
 /* ================= CONFIG ================= */
 const BACKEND_ORIGIN = (
@@ -286,18 +286,24 @@ const extractDownloadMeta = (payload, fallbackUrl = "") => {
 };
 
 const buildFileUrlFromJobPayload = (payload) => {
-  const direct =
-    payload?.download_url ||
-    payload?.result?.download_url ||
-    payload?.result?.file_url ||
-    payload?.result?.fileUrl ||
-    payload?.file_url ||
-    payload?.fileUrl;
+  const directCandidates = [
+    payload?.result?.download_url,
+    payload?.download_url,
+    payload?.result?.file_url,
+    payload?.result?.fileUrl,
+    payload?.file_url,
+    payload?.fileUrl,
+  ];
+
+  const direct = directCandidates.find(
+    (value) => typeof value === "string" && value.trim()
+  );
 
   if (direct) {
     return absoluteDownloadUrl(direct);
   }
 
+  // Legacy backend fallback only.
   const filePath =
     payload?.result?.file_path ||
     payload?.file_path ||
@@ -404,35 +410,24 @@ function formatTimeAgo(timestamp) {
   return `${days} days ago`;
 }
 
-async function downloadFileFromUrl(fileUrl, filename = "vydra-download.mp4") {
+function downloadFileFromUrl(fileUrl, filename = "vydra-download.mp4") {
   const resolved = absoluteDownloadUrl(fileUrl);
   if (!resolved) return false;
 
   try {
-    const response = await fetch(resolved, { method: "GET" });
-    if (!response.ok) throw new Error(`Download failed (${response.status})`);
-
-    const blob = await response.blob();
-    const objectUrl = URL.createObjectURL(blob);
-
-    const link = document.createElement("a");
-    link.href = objectUrl;
-    link.download = filename;
-    document.body.appendChild(link);
-    link.click();
-    link.remove();
-
-    window.setTimeout(() => URL.revokeObjectURL(objectUrl), 2000);
-    return true;
-  } catch {
     const link = document.createElement("a");
     link.href = resolved;
-    link.target = "_blank";
-    link.rel = "noreferrer noopener";
     link.download = filename;
     document.body.appendChild(link);
     link.click();
     link.remove();
+    return true;
+  } catch {
+    try {
+      window.open(resolved, "_blank", "noopener,noreferrer");
+    } catch {
+      // The visible "Open latest file" link remains available as a fallback.
+    }
     return false;
   }
 }
@@ -504,6 +499,7 @@ export default function Download() {
 
   const [rippleActive, setRippleActive] = useState(false);
   const [successActive, setSuccessActive] = useState(false);
+  const [showLimitModal, setShowLimitModal] = useState(false);
 
   const abortRef = useRef(null);
   const autoStartTimerRef = useRef(null);
@@ -512,6 +508,60 @@ export default function Download() {
   const dailyLimit = isPremium ? PREMIUM_DAILY_LIMIT : FREE_DAILY_LIMIT;
   const dailyRemaining = Math.max(0, dailyLimit - (dailyUsage.count || 0));
   const hasUrl = Boolean(String(url || "").trim());
+
+
+const sleep = (ms) => new Promise((resolve) => window.setTimeout(resolve, ms));
+
+async function waitForJobCompletion(jobId, signal) {
+  const started = Date.now();
+  const timeoutMs = 90_000;
+  const pollEveryMs = 1200;
+
+  while (Date.now() - started < timeoutMs) {
+    if (signal?.aborted) {
+      throw new DOMException("Request aborted", "AbortError");
+    }
+
+    const job = await get(`/api/job/${jobId}`, null, {
+      timeoutMs: 15000,
+    });
+
+    const jobStatus = String(job?.status || "").toLowerCase();
+    const progress = Number(job?.progress);
+
+    if (Number.isFinite(progress)) {
+      setProgressPct(Math.max(0, Math.min(99, progress)));
+    }
+
+    if (jobStatus === "completed") {
+      return job;
+    }
+
+    if (jobStatus === "failed" || jobStatus === "cancelled") {
+      const err = new Error(job?.error || "Job failed");
+      err.job = job;
+      throw err;
+    }
+
+    const nextStatus =
+      jobStatus === "processing"
+        ? "Processing..."
+        : jobStatus === "pending"
+          ? "Queued..."
+          : "Working...";
+
+    setStatusText(
+      Number.isFinite(progress) && progress > 0
+        ? `${nextStatus} (${Math.max(0, Math.min(99, progress))}%)`
+        : nextStatus
+    );
+
+    await sleep(pollEveryMs);
+  }
+
+  throw new Error("Download timed out");
+}
+
 
   useEffect(() => {
     setHistory(loadHistory(activeUserId));
@@ -653,155 +703,185 @@ export default function Download() {
     setLatestCaption("");
   }
 
-  async function startDownload(e, overrideUrl = null) {
-    if (e?.preventDefault) e.preventDefault();
 
-    const sourceUrl = overrideUrl ?? url;
-    const normalizedUrl = normalizeInputUrl(sourceUrl);
+async function startDownload(e, overrideUrl = null) {
+  if (e?.preventDefault) e.preventDefault();
 
-    if (!normalizedUrl) {
-      setStatusText("Please paste a valid URL.");
-      return;
-    }
+  const sourceUrl = overrideUrl ?? url;
+  const normalizedUrl = normalizeInputUrl(sourceUrl);
 
-    if (dailyRemaining <= 0) {
-      setStatusText("Daily limit reached");
-      return;
-    }
-
-    if (mode === "audio" && enhanceAudio && !isPremium) {
-      requirePremium("Audio enhancement");
-      return;
-    }
-
-    if (mode === "video" && PREMIUM_VIDEO_QUALITIES.includes(quality) && !isPremium) {
-      requirePremium(`Quality ${quality}`);
-      return;
-    }
-
-    setUrl(normalizedUrl);
-    setLatestFileUrl("");
-    setLatestTitle("");
-    setLatestCaption("");
-    setIsDownloading(true);
-    setStatusText("Sending request...");
-    setProgressPct(0);
-
-    setRippleActive(true);
-    setTimeout(() => setRippleActive(false), 700);
-
-    if (abortRef.current) {
-      abortRef.current.abort();
-    }
-
-    const controller = new AbortController();
-    abortRef.current = controller;
-
-    const meta = { mode: mode === "audio" ? "audio" : "video" };
-    if (mode === "video") meta.quality = quality;
-    if (mode === "audio") meta.enhance_audio = !!enhanceAudio;
-
-    const referrerId = getReferrerId();
-    if (referrerId) meta.referrer_id = referrerId;
-
-    const payload = {
-      url: normalizedUrl,
-      user_id: activeUserId,
-      meta,
-    };
-
-    try {
-      const { data } = await api.post("/api/download", payload, {
-        signal: controller.signal,
-      });
-
-      const status = String(data?.status || data?.result?.status || "").toLowerCase();
-
-      const used = Number(data?.used);
-      if (Number.isFinite(used)) {
-        updateDailyUsage(used, todayKey());
-      } else {
-        incrementDailyUsage();
-      }
-
-      if (status === "blocked") {
-        setIsDownloading(false);
-        setProgressPct(0);
-        setStatusText(data?.message || "YouTube is blocking this request (bot detection)");
-        return;
-      }
-
-      if (status === "failure" || status === "failed" || status === "error") {
-        setIsDownloading(false);
-        setProgressPct(0);
-        setStatusText(data?.error || data?.message || "Download failed");
-        return;
-      }
-
-      const fileUrl = buildFileUrlFromJobPayload(data);
-      const { title, caption, thumbnail, uploader, hashtags, platform } =
-        extractDownloadMeta(data, normalizedUrl);
-
-      const finalTitle = title || "Download";
-      const finalCaption = caption || "";
-
-      setLatestFileUrl(fileUrl || "");
-      setLatestTitle(finalTitle);
-      setLatestCaption(finalCaption);
-      setProgressPct(100);
-      setStatusText("Download ready");
-      setIsDownloading(false);
-      setSuccessActive(true);
-
-      if (fileUrl) {
-        const filename = makeSafeFilename(finalTitle, mode === "video" ? quality : "audio", mode);
-        setTimeout(() => {
-          void downloadFileFromUrl(fileUrl, filename);
-        }, 250);
-      }
-
-      setTimeout(() => setSuccessActive(false), 1800);
-
-      addHistory({
-        url: normalizedUrl,
-        fileUrl: fileUrl || "",
-        title: finalTitle,
-        caption: finalCaption,
-        mode,
-        quality: mode === "video" ? quality : "audio",
-        enhanced: mode === "audio" ? !!enhanceAudio : false,
-        thumbnail,
-        uploader,
-        hashtags,
-        platform,
-      });
-
-      clearReferrer();
-    } catch (err) {
-      const status = err?.response?.status;
-      const body = err?.response?.data || {};
-      const message = body?.error || body?.message || err?.message || "Request failed";
-
-      if (status === 403 && body?.error === "daily_limit_reached") {
-        const used = Number(body?.used);
-        const limit = Number(body?.limit);
-
-        if (Number.isFinite(used) && Number.isFinite(limit)) {
-          updateDailyUsage(used, todayKey());
-          setStatusText(`Daily limit reached (${used}/${limit})`);
-        } else {
-          setStatusText("Daily limit reached");
-        }
-      } else {
-        setStatusText(message);
-      }
-
-      setIsDownloading(false);
-      setProgressPct(0);
-    }
+  if (!normalizedUrl) {
+    setStatusText("Please paste a valid URL.");
+    return;
   }
 
-  async function pasteClipboard() {
+  if (dailyRemaining <= 0) {
+    setShowLimitModal(true);
+    setStatusText("Daily limit reached");
+    return;
+  }
+
+  if (mode === "audio" && enhanceAudio && !isPremium) {
+    requirePremium("Audio enhancement");
+    return;
+  }
+
+  if (mode === "video" && PREMIUM_VIDEO_QUALITIES.includes(quality) && !isPremium) {
+    requirePremium(`Quality ${quality}`);
+    return;
+  }
+
+  setUrl(normalizedUrl);
+  setLatestFileUrl("");
+  setLatestTitle("");
+  setLatestCaption("");
+  setIsDownloading(true);
+  setStatusText("Sending request...");
+  setProgressPct(0);
+
+  setRippleActive(true);
+  setTimeout(() => setRippleActive(false), 700);
+
+  if (abortRef.current) {
+    abortRef.current.abort();
+  }
+
+  const controller = new AbortController();
+  abortRef.current = controller;
+
+  const meta = { mode: mode === "audio" ? "audio" : "video" };
+  if (mode === "video") meta.quality = quality;
+  if (mode === "audio") meta.enhance_audio = !!enhanceAudio;
+
+  const referrerId = getReferrerId();
+  if (referrerId) meta.referrer_id = referrerId;
+
+  const payload = {
+    url: normalizedUrl,
+    user_id: activeUserId,
+    meta,
+  };
+
+  try {
+    const data = await createDownload(payload);
+
+    const used = Number(data?.used);
+    if (Number.isFinite(used)) {
+      updateDailyUsage(used, todayKey());
+    }
+
+    if (String(data?.status || "").toLowerCase() === "blocked" || data?.error === "daily_limit_reached") {
+      const blockedUsed = Number(data?.used);
+      const blockedLimit = Number(data?.limit);
+
+      setShowLimitModal(true);
+      setIsDownloading(false);
+      setProgressPct(0);
+      setStatusText(
+        data?.message ||
+          (Number.isFinite(blockedUsed) && Number.isFinite(blockedLimit)
+            ? `Daily limit reached (${blockedUsed}/${blockedLimit})`
+            : "Daily limit reached")
+      );
+      return;
+    }
+
+    if (!data?.job_id) {
+      throw new Error(data?.message || "Download job was not created");
+    }
+
+    setStatusText("Queued...");
+    setProgressPct(Number.isFinite(Number(data?.progress)) ? Number(data.progress) : 0);
+
+    const finalJob = await waitForJobCompletion(data.job_id, controller.signal);
+
+    const finalStatus = String(finalJob?.status || finalJob?.result?.status || "").toLowerCase();
+    if (finalStatus === "failed" || finalStatus === "error") {
+      throw new Error(
+        finalJob?.error ||
+          finalJob?.message ||
+          finalJob?.result?.error ||
+          "Download failed"
+      );
+    }
+
+    const fileUrl = buildFileUrlFromJobPayload(finalJob);
+
+    if (!fileUrl) {
+      throw new Error(
+        "Download completed, but no download URL was returned by the backend."
+      );
+    }
+
+    const { title, caption, thumbnail, uploader, hashtags, platform } =
+      extractDownloadMeta(finalJob, normalizedUrl);
+
+    const finalTitle = title || "Download";
+    const finalCaption = caption || "";
+
+    setLatestFileUrl(fileUrl || "");
+    setLatestTitle(finalTitle);
+    setLatestCaption(finalCaption);
+    setProgressPct(100);
+    setStatusText("Download ready");
+    setIsDownloading(false);
+    setSuccessActive(true);
+
+    const filename = makeSafeFilename(
+      finalTitle,
+      mode === "video" ? quality : "audio",
+      mode
+    );
+
+    setTimeout(() => {
+      downloadFileFromUrl(fileUrl, filename);
+    }, 250);
+
+    setTimeout(() => setSuccessActive(false), 1800);
+
+    addHistory({
+      url: normalizedUrl,
+      fileUrl: fileUrl || "",
+      title: finalTitle,
+      caption: finalCaption,
+      mode,
+      quality: mode === "video" ? quality : "audio",
+      enhanced: mode === "audio" ? !!enhanceAudio : false,
+      thumbnail,
+      uploader,
+      hashtags,
+      platform,
+    });
+
+    clearReferrer();
+  } catch (err) {
+    const status = err?.response?.status || err?.status;
+    const body = err?.response?.data || err || {};
+    const message = body?.error || body?.message || err?.message || "Request failed";
+
+    if (status === 403 && body?.error === "daily_limit_reached") {
+      const used = Number(body?.used);
+      const limit = Number(body?.limit);
+
+      if (Number.isFinite(used) && Number.isFinite(limit)) {
+        updateDailyUsage(used, todayKey());
+        setShowLimitModal(true);
+        setStatusText(`Daily limit reached (${used}/${limit})`);
+      } else {
+        setShowLimitModal(true);
+        setStatusText("Daily limit reached");
+      }
+    } else {
+      setStatusText(message);
+    }
+
+    setIsDownloading(false);
+    setProgressPct(0);
+  }
+}
+
+async function pasteClipboard() {
+
     try {
       if (navigator.clipboard && navigator.clipboard.readText) {
         const text = await navigator.clipboard.readText();
@@ -1050,6 +1130,77 @@ export default function Download() {
           </div>
         </div>
       )}
+
+{showLimitModal && (
+  <div
+    role="dialog"
+    aria-modal="true"
+    style={{
+      position: "fixed",
+      inset: 0,
+      zIndex: 110,
+      background: "rgba(0,0,0,0.72)",
+      display: "grid",
+      placeItems: "center",
+      padding: 16,
+    }}
+  >
+    <div
+      style={{
+        width: "100%",
+        maxWidth: 420,
+        borderRadius: 20,
+        padding: 22,
+        background: "linear-gradient(180deg, rgba(16,18,28,0.98), rgba(8,10,16,0.98))",
+        border: "1px solid rgba(255,255,255,0.08)",
+        boxShadow: "0 20px 60px rgba(0,0,0,0.55)",
+      }}
+    >
+      <div style={{ fontSize: 20, fontWeight: 900, color: "white" }}>Daily Limit Reached</div>
+      <div style={{ marginTop: 8, color: "rgba(200,210,230,0.78)", fontSize: 14 }}>
+        You've used all your free downloads for today.
+      </div>
+      <div style={{ marginTop: 10, color: "rgba(200,210,230,0.6)", fontSize: 12 }}>
+        {dailyUsage.count || 0} / {dailyLimit} used
+      </div>
+
+      <div style={{ display: "flex", gap: 10, marginTop: 18, flexWrap: "wrap" }}>
+        <button
+          type="button"
+          onClick={() => navigate("/premium")}
+          style={{
+            flex: "1 1 160px",
+            border: "none",
+            borderRadius: 14,
+            padding: "12px 16px",
+            background: "linear-gradient(90deg,#7c5bff,#3ec7c0)",
+            color: "black",
+            fontWeight: 900,
+            cursor: "pointer",
+          }}
+        >
+          Upgrade to Premium
+        </button>
+        <button
+          type="button"
+          onClick={() => setShowLimitModal(false)}
+          style={{
+            flex: "1 1 120px",
+            border: "1px solid rgba(255,255,255,0.08)",
+            borderRadius: 14,
+            padding: "12px 16px",
+            background: "rgba(255,255,255,0.04)",
+            color: "white",
+            fontWeight: 800,
+            cursor: "pointer",
+          }}
+        >
+          Close
+        </button>
+      </div>
+    </div>
+  </div>
+)}
 
       <div style={styles.container}>
         <header style={styles.hero}>
