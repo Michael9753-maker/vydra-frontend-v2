@@ -1,36 +1,29 @@
 @import "./base/reset.css";
 @import "./base/variables.css";
-@import "./layout/theme.css"; /* ✅ FIXED PATH */
+@import "./layout/theme.css";
 
 /* =====================================================
    VYDRA — Global tokens and base reset
    ===================================================== */
 
 :root {
-  /* Typography */
   --font-main: "Inter", system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
 
-  /* Text */
   --text-main: 236, 239, 245;
   --text-muted: 160, 168, 186;
 
-  /* Accent system */
   --accent-main: 66, 203, 197;
   --accent-soft: 170, 214, 230;
 
-  /* Nebula */
   --nebula-a: 126, 92, 255;
   --nebula-b: 255, 210, 118;
   --nebula-c: 95, 145, 255;
 
-  /* Dark bases */
   --bg-dark-1: 6, 11, 24;
   --bg-dark-2: 7, 20, 46;
 
-  /* Motion */
   --ease-soft: cubic-bezier(0.25, 0.9, 0.35, 1);
 
-  /* Background tuning */
   --nebula-opacity: 0.075;
   --nebula-duration: 360s;
   --nebula-vector-x: 10%;
@@ -47,15 +40,14 @@
   --bg-intensity: 1;
 
   --blur-heavy: 36px;
+
+  --page-gutter: 24px;
+  --page-max: 1200px;
 }
 
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
-
-/* =====================================================
-   Base reset
-   ===================================================== */
 
 @layer base {
   html,
@@ -69,14 +61,18 @@
     font-family: var(--font-main);
   }
 
-  body {
+  html {
+    width: 100%;
     overflow-x: hidden;
   }
 
-  * {
-    box-sizing: border-box;
+  body {
+    width: 100%;
+    overflow-x: hidden;
+    overscroll-behavior-x: none;
   }
 
+  *,
   *::before,
   *::after {
     box-sizing: border-box;
@@ -91,6 +87,16 @@
   select,
   textarea {
     font: inherit;
+  }
+
+  img,
+  video,
+  svg {
+    max-width: 100%;
+  }
+
+  button {
+    -webkit-tap-highlight-color: transparent;
   }
 }
 
@@ -110,11 +116,13 @@
   flex: 1;
   position: relative;
   z-index: 10;
+  width: 100%;
+  min-width: 0;
   padding: 84px 1.5rem 64px;
 }
 
 .page-container {
-  max-width: 1200px;
+  width: min(100%, var(--page-max));
   margin: 0 auto;
   padding: 4.75rem 1.5rem;
 }
@@ -133,21 +141,20 @@
   text-shadow: 0 0 18px rgba(var(--nebula-a), 0.5);
 }
 
-/* Shared glass */
 .glass,
 .card {
-  background: linear-gradient(180deg, rgba(255,255,255,0.028), rgba(255,255,255,0.015));
-  border: 1px solid rgba(255,255,255,0.06);
+  background: linear-gradient(
+    180deg,
+    rgba(255, 255, 255, 0.028),
+    rgba(255, 255, 255, 0.015)
+  );
+  border: 1px solid rgba(255, 255, 255, 0.06);
   border-radius: 18px;
-  box-shadow: 0 18px 46px rgba(0,0,0,0.34);
+  box-shadow: 0 18px 46px rgba(0, 0, 0, 0.34);
   backdrop-filter: blur(14px);
   -webkit-backdrop-filter: blur(14px);
   color: rgba(var(--text-main), 1);
 }
-
-/* =====================================================
-   Subtle reusable UI helpers
-   ===================================================== */
 
 .section-title {
   color: white;
@@ -162,15 +169,20 @@
   border-radius: 999px;
   display: grid;
   place-items: center;
-  border: 1px solid rgba(255,255,255,0.08);
-  background: rgba(255,255,255,0.03);
-  color: rgba(200,220,255,0.92);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(255, 255, 255, 0.03);
+  color: rgba(200, 220, 255, 0.92);
 }
 
 .divider-soft {
   height: 1px;
   width: 100%;
-  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.12), transparent);
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(255, 255, 255, 0.12),
+    transparent
+  );
   opacity: 0.7;
 }
 
@@ -180,9 +192,9 @@
   gap: 8px;
   padding: 8px 13px;
   border-radius: 999px;
-  background: rgba(255,255,255,0.045);
-  border: 1px solid rgba(255,255,255,0.055);
-  color: rgba(235,240,250,0.95);
+  background: rgba(255, 255, 255, 0.045);
+  border: 1px solid rgba(255, 255, 255, 0.055);
+  color: rgba(235, 240, 250, 0.95);
   font-size: 13px;
   font-weight: 700;
 }
@@ -215,9 +227,17 @@
   opacity: 0;
   filter: blur(24px);
   background:
-    radial-gradient(circle at center, rgba(160,200,255,0.18) 0%, rgba(142,95,255,0.09) 30%, rgba(80,100,255,0.02) 60%, transparent 80%);
+    radial-gradient(
+      circle at center,
+      rgba(160, 200, 255, 0.18) 0%,
+      rgba(142, 95, 255, 0.09) 30%,
+      rgba(80, 100, 255, 0.02) 60%,
+      transparent 80%
+    );
   will-change: transform, opacity;
-  transition: transform 700ms cubic-bezier(0.22, 1, 0.36, 1), opacity 700ms;
+  transition:
+    transform 700ms cubic-bezier(0.22, 1, 0.36, 1),
+    opacity 700ms;
 }
 
 .ripple-overlay.active .ripple-circle {
@@ -235,11 +255,75 @@
 
 .home-root {
   padding: 20px 18px 70px;
+  width: 100%;
+  min-width: 0;
 }
 
 .home-shell {
-  max-width: 1510px;
+  width: min(100%, 1510px);
   margin: 0 auto;
+  min-width: 0;
+}
+
+/* =====================================================
+   HEADER — mobile responsive layer
+   Base desktop styling is provided by theme.css.
+   These rules come after the theme import intentionally.
+   ===================================================== */
+
+.vydra-header__inner {
+  width: min(calc(100vw - (2 * var(--page-gutter))), var(--page-max));
+}
+
+.vydra-header__menu {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 1.5rem;
+  min-width: 0;
+}
+
+.vydra-mobile-toggle {
+  display: none;
+  width: 42px;
+  height: 42px;
+  padding: 0;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 13px;
+  background: rgba(255, 255, 255, 0.04);
+  color: rgba(240, 244, 255, 0.96);
+  cursor: pointer;
+  place-items: center;
+  align-content: center;
+  gap: 5px;
+  flex: 0 0 auto;
+}
+
+.vydra-mobile-toggle span {
+  display: block;
+  width: 18px;
+  height: 2px;
+  border-radius: 999px;
+  background: currentColor;
+  transition:
+    transform 180ms var(--ease-soft),
+    opacity 180ms var(--ease-soft);
+}
+
+.vydra-mobile-toggle.is-open span:nth-child(1) {
+  transform: translateY(7px) rotate(45deg);
+}
+
+.vydra-mobile-toggle.is-open span:nth-child(2) {
+  opacity: 0;
+}
+
+.vydra-mobile-toggle.is-open span:nth-child(3) {
+  transform: translateY(-7px) rotate(-45deg);
+}
+
+.vydra-mobile-backdrop {
+  display: none;
 }
 
 /* =====================================================
@@ -247,6 +331,10 @@
    ===================================================== */
 
 @media (max-width: 900px) {
+  :root {
+    --page-gutter: 18px;
+  }
+
   .vydra-main {
     padding: 78px 1rem 56px;
   }
@@ -255,7 +343,297 @@
     padding: 3.5rem 1rem;
   }
 }
-html, body, #root {
+
+@media (max-width: 768px) {
+  :root {
+    --page-gutter: 12px;
+  }
+
+  .vydra-main {
+    padding: 74px 0 42px;
+  }
+
+  .page-container {
+    width: 100%;
+    padding: 2.5rem 12px 3rem;
+  }
+
+  .home-root {
+    padding: 12px var(--page-gutter) 54px;
+  }
+
+  .home-shell {
+    width: 100%;
+  }
+
+  /* ---------- Header ---------- */
+
+  .vydra-header {
+    padding: 10px var(--page-gutter);
+  }
+
+  .vydra-header__inner {
+    width: 100%;
+    min-height: 58px;
+    padding: 9px 10px 9px 14px;
+    border-radius: 17px;
+    gap: 10px;
+  }
+
+  .vydra-logo {
+    min-width: 0;
+  }
+
+  .vydra-logo a {
+    display: inline-flex;
+    align-items: center;
+    min-height: 40px;
+  }
+
+  .vydra-mobile-toggle {
+    display: grid;
+    margin-left: auto;
+  }
+
+  .vydra-header__menu {
+    position: absolute;
+    top: calc(100% + 8px);
+    left: 0;
+    width: 100%;
+    max-height: calc(100vh - 92px);
+    padding: 10px;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 18px;
+    background:
+      linear-gradient(
+        180deg,
+        rgba(13, 18, 30, 0.96),
+        rgba(8, 12, 22, 0.96)
+      );
+    box-shadow:
+      0 24px 70px rgba(0, 0, 0, 0.45),
+      0 0 40px rgba(124, 91, 255, 0.08);
+    backdrop-filter: blur(22px);
+    -webkit-backdrop-filter: blur(22px);
+    display: none;
+    flex-direction: column;
+    align-items: stretch;
+    justify-content: flex-start;
+    gap: 8px;
+    overflow-y: auto;
+    z-index: 1004;
+  }
+
+  .vydra-header__menu.is-open {
+    display: flex;
+    animation: vydraMobileMenuIn 180ms var(--ease-soft);
+  }
+
+  .vydra-nav {
+    width: 100%;
+    display: grid;
+    gap: 4px;
+  }
+
+  .vydra-nav__link {
+    width: 100%;
+    min-height: 46px;
+    display: flex;
+    align-items: center;
+    padding: 0 14px;
+    border-radius: 12px;
+    font-size: 0.95rem;
+    color: rgba(220, 226, 240, 0.9);
+  }
+
+  .vydra-nav__link::after {
+    display: none;
+  }
+
+  .vydra-nav__link:hover {
+    background: rgba(255, 255, 255, 0.04);
+    transform: none;
+  }
+
+  .vydra-nav__download {
+    color: rgba(var(--accent-main), 1);
+    background: rgba(var(--accent-main), 0.06);
+  }
+
+  .vydra-nav__download::before {
+    display: none;
+  }
+
+  .vydra-actions {
+    width: 100%;
+    display: grid;
+    gap: 8px;
+    padding-top: 8px;
+    border-top: 1px solid rgba(255, 255, 255, 0.07);
+  }
+
+  .vydra-user {
+    padding: 10px 12px;
+    color: rgba(200, 210, 230, 0.64);
+    font-size: 0.82rem;
+  }
+
+  .vydra-actions .btn {
+    width: 100%;
+    min-height: 46px;
+  }
+
+  .vydra-mobile-backdrop {
+    display: block;
+    position: fixed;
+    inset: 0;
+    border: 0;
+    padding: 0;
+    margin: 0;
+    background: rgba(2, 5, 12, 0.38);
+    backdrop-filter: blur(1px);
+    -webkit-backdrop-filter: blur(1px);
+    z-index: 1001;
+    cursor: default;
+  }
+
+  @keyframes vydraMobileMenuIn {
+    from {
+      opacity: 0;
+      transform: translateY(-6px) scale(0.985);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0) scale(1);
+    }
+  }
+
+  /* ---------- Shared glass surfaces ---------- */
+
+  .glass,
+  .card {
+    border-radius: 16px;
+    box-shadow: 0 14px 36px rgba(0, 0, 0, 0.28);
+    backdrop-filter: blur(11px);
+    -webkit-backdrop-filter: blur(11px);
+  }
+
+  /* ---------- General media/layout safety ---------- */
+
+  .home-root,
+  .home-shell,
+  .page-container,
+  .vydra-main {
+    min-width: 0;
+    overflow-wrap: anywhere;
+  }
+
+  section,
+  article,
+  main,
+  header,
+  footer {
+    max-width: 100%;
+  }
+
+  img,
+  video,
+  iframe {
+    max-width: 100%;
+  }
+}
+
+@media (max-width: 480px) {
+  :root {
+    --page-gutter: 10px;
+  }
+
+  .vydra-main {
+    padding-top: 72px;
+    padding-bottom: 36px;
+  }
+
+  .page-container {
+    padding: 2rem 10px 2.5rem;
+  }
+
+  .vydra-header {
+    padding: 8px var(--page-gutter);
+  }
+
+  .vydra-header__inner {
+    min-height: 56px;
+    padding: 8px 8px 8px 12px;
+    border-radius: 16px;
+  }
+
+  .vydra-mobile-toggle {
+    width: 40px;
+    height: 40px;
+    border-radius: 12px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .vydra-mobile-toggle span,
+  .vydra-header__menu {
+    transition: none !important;
+    animation: none !important;
+  }
+}
+
+/* =====================================================
+   Final document fallback
+   ===================================================== */
+
+html,
+body,
+#root {
   height: 100%;
-  background: rgb(6, 8, 16); /* fallback */
+  background: rgb(6, 8, 16);
+}
+
+/* =====================================================
+   VYDRA — Header scroll behavior
+   ===================================================== */
+
+.vydra-header {
+  transition:
+    transform 260ms cubic-bezier(0.22, 1, 0.36, 1),
+    opacity 220ms ease,
+    box-shadow 220ms ease,
+    background 220ms ease;
+  will-change: transform, opacity;
+}
+
+.vydra-header.vydra-header--hidden {
+  transform: translate3d(0, calc(-100% - 18px), 0) !important;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.vydra-header--menu-open {
+  transform: translate3d(0, 0, 0) !important;
+  opacity: 1 !important;
+  pointer-events: auto !important;
+}
+
+/* =====================================================
+   VYDRA — Header visibility polish
+   ===================================================== */
+
+.vydra-header--scrolled .vydra-header__inner {
+  background: rgba(10, 15, 20, 0.88) !important;
+  border-color: rgba(255, 255, 255, 0.12);
+  box-shadow:
+    0 16px 48px rgba(0, 0, 0, 0.45),
+    0 0 24px rgba(124, 91, 255, 0.06);
+}
+
+@media (max-width: 768px) {
+  .vydra-header--scrolled .vydra-header__inner {
+    background: rgba(10, 15, 20, 0.92) !important;
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+  }
 }
