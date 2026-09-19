@@ -1,0 +1,4 @@
+﻿User-agent: *
+Allow: /
+
+Sitemap: https://vydra-frontend-v2.vercel.app/sitemap.xml
