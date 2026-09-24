@@ -1,5 +1,5 @@
 import React, { useMemo, useContext } from "react";
-import { useNavigate } from "react-router-dom";
+import { Link } from "react-router-dom";
 import { PremiumContext } from "../context/PremiumContext";
 import { useAuth } from "../context/AuthContext";
 
@@ -126,36 +126,36 @@ const platformItems = [
 
 const features = [
   {
-    title: "Universal Downloader",
-    desc: "Download from TikTok, YouTube, Instagram, Facebook, Vimeo, and more with a clean workflow.",
+    title: "Universal Video Downloader",
+    desc: "Download videos from YouTube, TikTok, Instagram, Facebook, Vimeo, and X through one simple workflow.",
     icon: <IconPlay />,
     tone: "purple",
   },
   {
-    title: "AI Enhancement",
-    desc: "Upscale resolution, sharpen details, reduce noise, and prepare content for premium-quality publishing.",
-    icon: <IconSpark />,
+    title: "Video and Audio Downloads",
+    desc: "Choose video or audio mode, then use the available quality options for the type of download you need.",
+    icon: <IconBolt />,
     tone: "pink",
   },
   {
-    title: "Pro Creator Tools",
-    desc: "Auto-captions, smart subtitles, editing helpers, and fast video handling built for creators.",
-    icon: <IconBolt />,
+    title: "AI Studio",
+    desc: "Premium users can create thumbnails, captions, and hashtags from their latest downloaded video.",
+    icon: <IconSpark />,
     tone: "blue",
   },
   {
-    title: "Privacy First",
-    desc: "No clutter, no tracking noise, and no unnecessary friction. Your workflow stays yours.",
+    title: "Creator-Friendly Workflow",
+    desc: "Move from finding a video to downloading it and preparing content for your next creative step.",
     icon: <IconShield />,
     tone: "green",
   },
 ];
 
 const stats = [
-  { label: "Videos processed", value: "10M+", tone: "purple" },
-  { label: "Happy creators", value: "500K+", tone: "pink" },
-  { label: "Platforms", value: "50+", tone: "blue" },
-  { label: "Uptime", value: "99.9%", tone: "green" },
+  { label: "Supported platforms", value: "6", tone: "purple" },
+  { label: "Download modes", value: "2", tone: "pink" },
+  { label: "Quality ceiling", value: "4K", tone: "blue" },
+  { label: "AI Studio tools", value: "3", tone: "green" },
 ];
 
 const howItWorks = [
@@ -192,7 +192,6 @@ const toneColors = {
 };
 
 export default function Home() {
-  const navigate = useNavigate();
   const { isPremium } = useContext(PremiumContext);
   const { user } = useAuth();
 
@@ -329,25 +328,25 @@ export default function Home() {
               <span style={styles.heroTitleWhite}>VYDRA</span>{" "}
               <span style={styles.heroTitleGradient}>🚀</span>
               <br />
-              <span style={styles.heroSubtitleLine}>Download, enhance, and edit videos</span>
+              <span style={styles.heroSubtitleLine}>Download videos from popular platforms</span>
               <br />
-              <span style={styles.heroAccent}>from any platform</span>
+              <span style={styles.heroAccent}>fast and simply</span>
             </h1>
 
             <p style={styles.heroSubtitle}>
-              Download, enhance, and edit videos from any platform with{" "}
-              <span style={styles.inlineHighlight}>AI-powered tools</span>.
+              VYDRA is an online video downloader for YouTube, TikTok, Instagram, Facebook, Vimeo, and X.
+              Download video or audio, then continue with VYDRA creator tools.
             </p>
 
             <div style={styles.heroActions} className="hero-actions">
-              <button
-                onClick={() => navigate("/download")}
+              <Link
+                to="/download"
                 style={styles.primaryLargeBtn}
                 className="cta-btn glow-strong hero-cta-button"
               >
                 <span>Download Now</span>
                 <IconArrowRight size={16} />
-              </button>
+              </Link>
             </div>
 
             <div style={styles.trustRow}>
@@ -368,6 +367,9 @@ export default function Home() {
 
             <div style={styles.platformSection}>
               <div style={styles.platformSectionTitle}>Supported platforms</div>
+              <p style={styles.platformSectionDesc}>
+                Download from YouTube, TikTok, Instagram, Facebook, Vimeo, and X with VYDRA.
+              </p>
               <div style={styles.platformRow} className="platform-list">
                 {platformItems.map((platform, index) => (
                   <div
@@ -389,6 +391,21 @@ export default function Home() {
             </div>
           </div>
         </div>
+
+        <section style={styles.searchIntro}>
+          <div style={styles.sectionHeader}>
+            <h2 style={styles.sectionTitle}>Online video downloader for YouTube, TikTok, Instagram, Facebook, Vimeo, and X</h2>
+            <p style={styles.sectionDesc}>
+              VYDRA gives you one place to download supported videos and audio from popular platforms. Paste a link,
+              choose the available quality or audio mode, and start the download. Premium adds higher limits and access
+              to VYDRA AI Studio.
+            </p>
+            <div style={styles.inlineLinkRow}>
+              <Link to="/download" style={styles.textLink}>Open the VYDRA video downloader</Link>
+              <Link to="/premium" style={styles.textLink}>See VYDRA Premium</Link>
+            </div>
+          </div>
+        </section>
 
         <section style={styles.statsGrid} className="stats-grid">
           {stats.map((item, index) => {
@@ -477,14 +494,14 @@ export default function Home() {
             enhancement, and cleaner workflows.
           </p>
           <div style={styles.heroActions} className="hero-actions">
-            <button
-              onClick={() => navigate("/download")}
+            <Link
+              to="/download"
               style={styles.primaryLargeBtn}
               className="cta-btn glow-strong hero-cta-button"
             >
               <span>Download Now</span>
               <IconArrowRight size={16} />
-            </button>
+            </Link>
           </div>
         </section>
 
@@ -499,29 +516,28 @@ export default function Home() {
 
             <div>
               <div style={styles.footerTitle}>Platform</div>
-              <div style={styles.footerLink}>Features</div>
-              <div style={styles.footerLink}>Pricing</div>
-              <div style={styles.footerLink}>API</div>
-              <div style={styles.footerLink}>Support</div>
+              <Link to="/download" style={styles.footerLink}>Video Downloader</Link>
+              <Link to="/premium" style={styles.footerLink}>Premium</Link>
+              <Link to="/ai-studio" style={styles.footerLink}>AI Studio</Link>
+              <a href="mailto:support.vydra@gmail.com" style={styles.footerLink}>Support</a>
             </div>
 
             <div>
               <div style={styles.footerTitle}>Help</div>
-              <div style={styles.footerLink}>Help Center</div>
-              <div style={styles.footerLink}>Contact</div>
-              <div style={styles.footerLink}>support.vydra@gmail.com</div>
+              <a href="mailto:support.vydra@gmail.com" style={styles.footerLink}>Contact</a>
+              <a href="mailto:support.vydra@gmail.com" style={styles.footerLink}>support.vydra@gmail.com</a>
             </div>
 
             <div>
               <div style={styles.footerTitle}>Legal</div>
-              <div style={styles.footerLink}>Privacy Policy</div>
-              <div style={styles.footerLink}>Terms of Service</div>
-              <div style={styles.footerLink}>Report Abuse</div>
+              <Link to="/legal" style={styles.footerLink}>Privacy Policy</Link>
+              <Link to="/legal" style={styles.footerLink}>Terms of Service</Link>
+              <Link to="/legal" style={styles.footerLink}>Copyright &amp; Abuse</Link>
             </div>
           </div>
 
           <div style={styles.footerBottom}>
-            <span>© 2026 VYDRA. All rights reserved. Domain: vydra.video</span>
+            <span>© 2026 VYDRA. All rights reserved.</span>
             <div style={{ display: "flex", gap: 10, flexWrap: "wrap", justifyContent: "center" }}>
               {user?.email ? <span style={styles.footerUser}>Signed in as {user.email}</span> : null}
               {isPremium ? <span style={styles.footerUser}>Premium active</span> : null}
@@ -764,6 +780,33 @@ const styles = {
     marginTop: 24,
     width: "100%",
   },
+  platformSectionDesc: {
+    margin: "0 auto 12px",
+    maxWidth: 720,
+    color: "rgba(200,210,230,0.72)",
+    fontSize: 13,
+    lineHeight: 1.5,
+  },
+  searchIntro: {
+    marginTop: 16,
+    padding: 22,
+    borderRadius: 24,
+    background: "rgba(255,255,255,0.02)",
+    border: "1px solid rgba(255,255,255,0.05)",
+    textAlign: "center",
+  },
+  inlineLinkRow: {
+    marginTop: 14,
+    display: "flex",
+    gap: 16,
+    justifyContent: "center",
+    flexWrap: "wrap",
+  },
+  textLink: {
+    color: "#8fe4df",
+    fontWeight: 800,
+    textDecoration: "none",
+  },
   platformSectionTitle: {
     color: "rgba(234,238,248,0.92)",
     fontSize: 13,
@@ -979,9 +1022,11 @@ const styles = {
     marginBottom: 10,
   },
   footerLink: {
+    display: "block",
     color: "rgba(200,210,230,0.74)",
     marginBottom: 8,
     fontSize: 14,
+    textDecoration: "none",
   },
   footerBottom: {
     marginTop: 18,
